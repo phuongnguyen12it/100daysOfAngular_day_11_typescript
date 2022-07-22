@@ -60,5 +60,53 @@ export class CatService extends BaseService<Cat> {}
 const dogService = new DogService();
 const catService = new CatService();
 
-dogService.findOne().bark();
-catService.findOne().mew();
+// dogService.findOne().bark();
+// catService.findOne().mew();
+
+//day 12
+
+function listen(port: unknown) {
+  if (typeof port === 'string') {
+    port = parseInt(port);
+  }
+  //@TODO somthing
+}
+
+let port: unknown;
+
+//Exclude & Extract
+interface Car {
+  color: string;
+  series: string;
+  patNumber?: string;
+}
+
+type carNotPatNumber = Exclude<keyof Car, 'patNumber'>; //=> carNotPatNumber{color:string, series:string}
+type carExtract = Extract<keyof Car, 'patNumber'>;
+
+const readOnlyCar: Readonly<Car> = {
+  //reonly atrribute cannot update
+  color: 'red',
+  series: '123',
+  patNumber: '1122',
+};
+
+const partialUser: Partial<Car> = {
+  color: 'red',
+};
+
+const nullableUser: NonNullable<Car> = {
+  color: null,
+  series: null,
+  patNumber: null,
+};
+
+const requiredCar: Required<Car> = {
+  color: 'green',
+  series: '1231',
+  patNumber: '11233',
+};
+
+const pickCar: Pick<Car, 'series' | 'patNumber'> = {
+  series: '1233',
+};
