@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { singleton, scoped, Lifecycle, container } from 'tsyringe';
 
 interface ProductModel {
   sku: string;
@@ -11,13 +12,8 @@ interface CartItem {
   quantity: number;
 }
 
-interface ICartService {
-  selectedProducts: CartItem[];
-  caculateTotal(): number;
-  addToCart(): void;
-}
-
-class CartService implements ICartService {
+@singleton()
+class CartService {
   selectedProducts: CartItem[] = [];
   caculateTotal(): number {
     return this.selectedProducts.reduce(
@@ -30,25 +26,38 @@ class CartService implements ICartService {
   }
 }
 
+@scoped(Lifecycle.ResolutionScoped)
 class ProductComponent {
-  constructor(public cartService: ICartService) {}
+  productComponentRandomId = Math.random;
+  constructor(public cartService: CartService) {}
 }
 
-const carService = new CartService();
-const productComponent = new ProductComponent(carService);
-
-console.log(productComponent);
-
-class MockCartService implements ICartService {
-  selectedProducts: CartItem[] = [];
-  caculateTotal(): number {
-    return 1; //mock data return
-  }
-  addToCart(): void {
-    //@TODO logic here
-  }
+function testContainer() {
+  console.log(container.resolve(ProductComponent));
 }
 
-const mockCartService = new MockCartService();
-const anotherProductComponentTest = new ProductComponent(mockCartService);
-console.log(anotherProductComponentTest.cartService.caculateTotal());
+testContainer();
+testContainer();
+testContainer();
+testContainer();
+
+// //test setup
+// class TestCarService {
+//   selectedProduct: CartItem[] = [];
+//   caculateTotal(): number {
+//     return this.selectedProduct.reduce(
+//       (total, item) => item.product.price * item.quantity + total,
+//       0
+//     );
+//   }
+//   addToCart(): void {
+//     //@todo logic
+//   }
+// }
+
+// function setupTestContainer() {
+//   container.register('CartService', { useValue: TestCarService });
+// }
+
+// setupTestContainer();
+// testContainer();
