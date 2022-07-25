@@ -1,63 +1,45 @@
-import 'reflect-metadata';
-import { singleton, scoped, Lifecycle, container } from 'tsyringe';
+import { fromEvent, Observable } from 'rxjs';
+import { map, throttleTime } from 'rxjs/operators';
 
-interface ProductModel {
-  sku: string;
-  name: string;
-  price: number;
-}
+// const rate = 1000;
+// let lastMove = Date.now() - rate;
 
-interface CartItem {
-  product: ProductModel;
-  quantity: number;
-}
-
-@singleton()
-class CartService {
-  selectedProducts: CartItem[] = [];
-  caculateTotal(): number {
-    return this.selectedProducts.reduce(
-      (total, item) => item.product.price * item.quantity + total,
-      0
-    );
-  }
-  addToCart(): void {
-    //@TODO logic here
-  }
-}
-
-@scoped(Lifecycle.ResolutionScoped)
-class ProductComponent {
-  productComponentRandomId = Math.random;
-  constructor(public cartService: CartService) {}
-}
-
-function testContainer() {
-  console.log(container.resolve(ProductComponent));
-}
-
-testContainer();
-testContainer();
-testContainer();
-testContainer();
-
-// //test setup
-// class TestCarService {
-//   selectedProduct: CartItem[] = [];
-//   caculateTotal(): number {
-//     return this.selectedProduct.reduce(
-//       (total, item) => item.product.price * item.quantity + total,
-//       0
-//     );
+// document.addEventListener('mousemove', (ev) => {
+//   if (Date.now() - lastMove >= rate) {
+//     console.log(ev);
+//     lastMove = Date.now();
 //   }
-//   addToCart(): void {
-//     //@todo logic
-//   }
-// }
+// });
 
-// function setupTestContainer() {
-//   container.register('CartService', { useValue: TestCarService });
-// }
+//RxJS
+// fromEvent(document, 'mousemove')
+//   .pipe(
+//     throttleTime(1000),
+//     map((ev: MouseEvent) => ev.clientX + ' ' + ev.clientY)
+//   )
+//   .subscribe(console.log);
 
-// setupTestContainer();
-// testContainer();
+const observable = new Observable(function subscribe(observer) {
+  const id = setInterval(() => {
+    observer.next('Hello Txjs');
+  }, 1000);
+  return function unsubscribe() {
+    clearTimeout(id);
+  };
+});
+
+// observable.subscribe(
+//   (val) => console.log(val),
+//   (err) => console.error(err),
+//   () => console.log('complete')
+// );
+
+const subscription = observable.subscribe({
+  next: (val) => console.log(val),
+  error: (err) => console.log(err),
+  complete: () => console.log('complete 000'),
+});
+
+setTimeout(() => {
+  subscription.unsubscribe();
+}, 10000);
