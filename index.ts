@@ -1,45 +1,53 @@
-import { fromEvent, Observable } from 'rxjs';
-import { map, throttleTime } from 'rxjs/operators';
+import {
+  from,
+  fromEvent,
+  fromEventPattern,
+  of,
+  interval,
+  timer,
+  throwError,
+  defer,
+} from 'rxjs';
 
-// const rate = 1000;
-// let lastMove = Date.now() - rate;
-
-// document.addEventListener('mousemove', (ev) => {
-//   if (Date.now() - lastMove >= rate) {
-//     console.log(ev);
-//     lastMove = Date.now();
-//   }
-// });
-
-//RxJS
-// fromEvent(document, 'mousemove')
-//   .pipe(
-//     throttleTime(1000),
-//     map((ev: MouseEvent) => ev.clientX + ' ' + ev.clientY)
-//   )
-//   .subscribe(console.log);
-
-const observable = new Observable(function subscribe(observer) {
-  const id = setInterval(() => {
-    observer.next('Hello Txjs');
-  }, 1000);
-  return function unsubscribe() {
-    clearTimeout(id);
-  };
-});
-
-// observable.subscribe(
-//   (val) => console.log(val),
-//   (err) => console.error(err),
-//   () => console.log('complete')
-// );
-
-const subscription = observable.subscribe({
+const observer = {
   next: (val) => console.log(val),
   error: (err) => console.log(err),
-  complete: () => console.log('complete 000'),
-});
+  complete: () => console.log('complete'),
+};
 
-setTimeout(() => {
-  subscription.unsubscribe();
-}, 10000);
+//of
+of(1, 2, 3, 4, 'hello', 'world', [1, 2, 3, 4, 5], { foo: 'bar' }); //.subscribe( observer );
+
+//form
+from('hello world'); //.subscribe(observer);
+
+//formEvent
+fromEvent(document, 'click'); //.subscribe(observer);
+
+//formEventPattern
+fromEventPattern(
+  (handler) => {
+    document.addEventListener('click', handler);
+  }, //add handler
+  (handler) => {
+    document.removeEventListener('click', handler);
+  } //remove add handler
+); //.subscribe(observer);
+
+//interval
+interval(1000); //.subscribe(observer);
+
+//timer
+timer(10000); //.subscribe(observer);
+timer(1000, 1000); //.subscribe(observer);
+
+//throwError
+throwError('error').subscribe(observer);
+
+//defer muon retry mot apicall hoan toan moi
+const random$ = defer(() => of(Math.random()));
+random$.subscribe(observer);
+random$.subscribe(observer);
+random$.subscribe(observer);
+
+defer(() => {});
