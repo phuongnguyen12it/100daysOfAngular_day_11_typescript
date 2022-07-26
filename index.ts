@@ -1,113 +1,121 @@
-import { asapScheduler, from, fromEvent, interval, timer } from 'rxjs';
 import {
-  distinct,
-  distinctUntilChanged,
-  filter,
-  find,
-  first,
-  last,
-  single,
-  skip,
-  skipUntil,
-  skipWhile,
+  forkJoin,
+  of,
+  delay,
+  combineLatest,
+  interval,
+  map,
+  zip,
+  concat,
+  merge,
+  fromEvent,
+  from,
+  race,
+  Observable,
+} from 'rxjs';
+import {
+  catchError,
+  endWith,
+  pairwise,
+  startWith,
   take,
-  takeLast,
-  takeUntil,
-  takeWhile,
-  auditTime,
-  sampleTime,
-  throttleTime,
-  pluck,
-  debounceTime,
+  withLatestFrom,
 } from 'rxjs/operators';
 
-const items = [1, 2, 3, 4, 5, 6];
 const observer = {
   next: (value) => console.log(value),
   error: (err) => console.error(err),
   complete: () => console.log('complete'),
 };
 
-//filter
-from(items).pipe(filter((x) => x % 2 === 0)); //.subscribe(observer);
+//forkJoin()
+forkJoin([
+  of('hello').pipe(delay(1000)),
+  of('work').pipe(delay(2000)),
+  of('!!!').pipe(delay(3000)),
+]); //.subscribe(observer);
 
-//first
-from(items).pipe(first((x) => x > 4)); //.subscribe(observer);
+//combielatest
+// chỉ vần một emit trả về thì combibeLatest sẽ bắt và return các giá trị của các emit khác kể cả có và ko có(thường là các giá trị trước đó của emit, nếu ko có thì trả về empty|0)
+combineLatest([
+  interval(2000).pipe(map((x) => `First: ${x}`)),
+  interval(1000).pipe(map((x) => `Second: ${x}`)),
+  interval(3000).pipe(map((x) => `Thỉrd: ${x}`)),
+]); //.subscribe(observer);
 
-//last
-from(items).pipe(last((x) => x < 4)); //.subscribe(observer);
+//zip
+//combineLatest(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9)).subscribe(observer);
+zip(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9)); //.subscribe(observer);
+const age$ = of(29, 28, 30);
+const name$ = of('A', 'B', 'C');
+const isAdmin$ = of(true, true, false);
 
-//find
-from(items).pipe(find((x) => x % 2 !== 0)); //.subscribe(observer);
-
-//single
-// su dung khi can duy nhat mot element, neu nhieu hon se bao loi
-from(items).pipe(single((x) => x > 5)); //.subscribe(observer);
-
-//take
-// muon lay bao nhieu lan gia tri dau vao
-interval(1000).pipe(take(10)); //.subscribe(observer);
-
-//takelast
-//phai complete(emit) moi lay 2 thang cuoi dc
-interval(1000).pipe(take(5), takeLast(2)); //.subscribe(observer);
-
-//takeUntil
-interval(1000).pipe(takeUntil(timer(5000))); //  .subscribe(observer);
-
-//taleWile
-interval(1000).pipe(takeWhile((x) => x <= 5)); //.subscribe(observer);
-
-//skip
-interval(1000).pipe(skip(5)); //.subscribe(observer);
-
-//skipUntil
-interval(1000).pipe(skipUntil(timer(6000))); //.subscribe(observer);
-
-//skipWhile
-interval(1000).pipe(skipWhile((x) => x < 6)); //.subscribe(observer);
-
-//distinct
-//skip cac gia tri trung lap
-from([1, 2, 3, 4, 5, 5, 4, 3, 6, 1]).pipe(distinct()); //.subscribe(observer);
-
-//distinUntilChanged
-//skip cac gia tri trung lap voi so truoc do
-//su dung ===
-from([1, 1, 2, 2, 2, 1, 1, 2, 3, 3, 4]).pipe(distinctUntilChanged()); //.subscribe(observer);
-
-//distinUntilKeyChanged => same distinUntilChanged
-
-//audit()/auditTime()
-// fromEvent(document, 'click')
-//   .pipe(
-//     auditTime(1500) //interval, timer 1500
-//   )
-//   .subscribe(observer);
-interval(1000).pipe(
-  auditTime(1500) //interval, timer 1500
-); //.subscribe(observer);
-//1s: 0 --> timer(1500) runs
-//2s: 1 --> timer con 500ms
-//(2.5s): 1 --> timer disabled
-//3s: 2 -->timer (1500) runs
-//4s: 3 --> timer 500s
-//4.5s:4 -->timer disabled
-//5s:4 --> timer 1500 runs
-
-//sampleTime # auditTime la no chay lien tuc
-interval(1000).pipe(
-  sampleTime(1500) //interval, timer 1500
+zip(age$, name$, isAdmin$).pipe(
+  map(([age, name, isAdmin]) => ({ age, name, isAdmin }))
 ); //.subscribe(observer);
 
-//throttleTime
-fromEvent(document, 'mousemove').pipe(
-  throttleTime(1500, asapScheduler, { trailing: false, leading: true })
+zip(fromEvent(document, 'mousedown'), fromEvent(document, 'mouseup')); //.subscribe(observer);
+
+//concat => cho thang truoc chay xong het moi den thang sau
+concat(interval(1000).pipe(take(3)), interval(500).pipe(take(5))); //.subscribe(observer);
+
+//merge => mổi thàng chạy lần lượt theo time, thằng nào emit trước chạy trước, ko cần chờ thằng trước chạy xong chi cả
+merge(
+  interval(1000).pipe(
+    take(3),
+    map((x) => `first ${x}`)
+  ),
+  interval(500).pipe(
+    take(5),
+    map((x) => `second ${x}`)
+  )
 ); //.subscribe(observer);
 
-//debounceTime
-// cho phep chay emit sau khi ko co phan hoi deboundTime giay
-const queryInput = document.querySelector('#queryInput');
-fromEvent(queryInput, 'keydown')
-  .pipe(debounceTime(1500), pluck('target', 'value'))
+//race => thằng nào emit trươc thì trả về bỏ qua thằng emit chậm hơn
+//nghiệp vụ thường được dùng cho ...
+race(
+  interval(1000).pipe(
+    take(3),
+    map((x) => `first ${x}`)
+  ),
+  interval(500).pipe(
+    take(5),
+    map((x) => `second ${x}`)
+  )
+); //.subscribe(observer);
+
+//withLatestFrom => giong combineLatest nhung thay vi lay het cai truoc do thì chỉ lấy cái phía trước mà sát nó nhất
+const withLatestFrom$ = interval(2000).pipe(
+  map((x) => `Need latest from this value: ${x}`)
+);
+fromEvent(document, 'click').pipe(withLatestFrom(withLatestFrom$)); //  .subscribe(observer);
+
+// startWith
+of('world').pipe(startWith('hello')); //.subscribe(observer); // =>
+
+interface ApiResponse<T> {
+  data: T;
+  isLoading: boolean;
+  error: string;
+}
+
+function getApiResonse<T>(apiCall: Observable<T>): Observable<ApiResponse<T>> {
+  return apiCall.pipe(
+    map((data) => ({ isLoading: false, data, error: '' })),
+    startWith({ isLoading: true, data: null, error: '' }),
+    catchError((err) =>
+      of({ isLoading: false, data: null, error: err.message })
+    )
+  );
+}
+
+// endWith
+of('hello').pipe(endWith('end')); //.subscribe(observer);
+
+//pairwise
+from([1, 2, 3, 4, 5])
+  .pipe(
+    pairwise(),
+    map(([prev, cur]) => prev + cur)
+  )
   .subscribe(observer);
