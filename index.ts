@@ -1,104 +1,113 @@
-import { of, merge, fromEvent, interval, BehaviorSubject } from 'rxjs';
+import { asapScheduler, from, fromEvent, interval, timer } from 'rxjs';
 import {
-  map,
-  delay,
+  distinct,
+  distinctUntilChanged,
+  filter,
+  find,
+  first,
+  last,
+  single,
+  skip,
+  skipUntil,
+  skipWhile,
+  take,
+  takeLast,
+  takeUntil,
+  takeWhile,
+  auditTime,
+  sampleTime,
+  throttleTime,
   pluck,
-  mapTo,
-  reduce,
-  toArray,
-  buffer,
-  bufferTime,
-  scan,
+  debounceTime,
 } from 'rxjs/operators';
 
-const users = [
-  {
-    id: 'ddfe3653-1569-4f2f-b57f-bf9bae542662',
-    username: 'tiepphan',
-    firstname: 'tiep',
-    lastname: 'phan',
-    postCount: 5,
-  },
-  {
-    id: '34784716-019b-4868-86cd-02287e49c2d3',
-    username: 'nartc',
-    firstname: 'chau',
-    lastname: 'tran',
-    postCount: 22,
-  },
-];
-
-const userVm = users.map((user) => {
-  return {
-    ...user,
-    fullname: `${user.firstname} ${user.lastname}`,
-  };
-});
-
+const items = [1, 2, 3, 4, 5, 6];
 const observer = {
   next: (value) => console.log(value),
-  error: (err) => console.log(err),
+  error: (err) => console.error(err),
   complete: () => console.log('complete'),
 };
 
-//map
-// of(users)
+//filter
+from(items).pipe(filter((x) => x % 2 === 0)); //.subscribe(observer);
+
+//first
+from(items).pipe(first((x) => x > 4)); //.subscribe(observer);
+
+//last
+from(items).pipe(last((x) => x < 4)); //.subscribe(observer);
+
+//find
+from(items).pipe(find((x) => x % 2 !== 0)); //.subscribe(observer);
+
+//single
+// su dung khi can duy nhat mot element, neu nhieu hon se bao loi
+from(items).pipe(single((x) => x > 5)); //.subscribe(observer);
+
+//take
+// muon lay bao nhieu lan gia tri dau vao
+interval(1000).pipe(take(10)); //.subscribe(observer);
+
+//takelast
+//phai complete(emit) moi lay 2 thang cuoi dc
+interval(1000).pipe(take(5), takeLast(2)); //.subscribe(observer);
+
+//takeUntil
+interval(1000).pipe(takeUntil(timer(5000))); //  .subscribe(observer);
+
+//taleWile
+interval(1000).pipe(takeWhile((x) => x <= 5)); //.subscribe(observer);
+
+//skip
+interval(1000).pipe(skip(5)); //.subscribe(observer);
+
+//skipUntil
+interval(1000).pipe(skipUntil(timer(6000))); //.subscribe(observer);
+
+//skipWhile
+interval(1000).pipe(skipWhile((x) => x < 6)); //.subscribe(observer);
+
+//distinct
+//skip cac gia tri trung lap
+from([1, 2, 3, 4, 5, 5, 4, 3, 6, 1]).pipe(distinct()); //.subscribe(observer);
+
+//distinUntilChanged
+//skip cac gia tri trung lap voi so truoc do
+//su dung ===
+from([1, 1, 2, 2, 2, 1, 1, 2, 3, 3, 4]).pipe(distinctUntilChanged()); //.subscribe(observer);
+
+//distinUntilKeyChanged => same distinUntilChanged
+
+//audit()/auditTime()
+// fromEvent(document, 'click')
 //   .pipe(
-//     map((data) => {
-//       console.log('inside map', data);
-//       return data;
-//     })
+//     auditTime(1500) //interval, timer 1500
 //   )
 //   .subscribe(observer);
+interval(1000).pipe(
+  auditTime(1500) //interval, timer 1500
+); //.subscribe(observer);
+//1s: 0 --> timer(1500) runs
+//2s: 1 --> timer con 500ms
+//(2.5s): 1 --> timer disabled
+//3s: 2 -->timer (1500) runs
+//4s: 3 --> timer 500s
+//4.5s:4 -->timer disabled
+//5s:4 --> timer 1500 runs
 
-merge(of(users[0]).pipe(delay(2000)), of(users[1]).pipe(delay(4000))).pipe(
-  map((user) => ({ ...user, fullname: `${user.firstname} ${user.lastname}` }))
+//sampleTime # auditTime la no chay lien tuc
+interval(1000).pipe(
+  sampleTime(1500) //interval, timer 1500
 ); //.subscribe(observer);
 
-//pluck
-const params$ = of({ id: 123, foo: { bar: 'phuong' } });
-const id$ = params$.pipe(pluck('foo', 'bar')); //.subscribe(observer);
-
-//mapTo
-merge(
-  fromEvent(document, 'mouseenter').pipe(mapTo(true)),
-  fromEvent(document, 'mouseleave').pipe(mapTo(false))
+//throttleTime
+fromEvent(document, 'mousemove').pipe(
+  throttleTime(1500, asapScheduler, { trailing: false, leading: true })
 ); //.subscribe(observer);
 
-//reduce
-const totalCout$ = merge(
-  of(users[0]).pipe(delay(2000)),
-  of(users[1]).pipe(delay(4000))
-  // interval(1000).pipe(mapTo({ postCount: 1 }))
-);
-
-totalCout$.pipe(reduce((acc, cur) => acc + cur.postCount, 0)); //.subscribe(observer);
-
-//toArray
-const user$ = merge(
-  of(users[0]).pipe(delay(2000)),
-  of(users[1]).pipe(delay(4000))
-).pipe(toArray()); //.subscribe(observer); // thay toArray bang //pip(reduce((acc, cur) => [...acc, cur], 0)) ta cung co ket qua tuong tu
-
-//buffer
-//giup gi lai cac gia tri trong luc dang chạy để rồi lúc kích hoạt nó sẽ show ra hết các giá trị mà bị bỏ qua đó, kiểu nó lưu vào buffer rồi chờ gọi nó sẽ trả về các giá trị đã lưu
-const source$ = interval(1000);
-const click$ = fromEvent(document, 'click');
-source$.pipe(buffer(click$)); //.subscribe(observer);
-
-//bufferTime
-source$.pipe(bufferTime(2000)); //.subscribe(observer);
-
-//scan
-//giống reduce nhưng thay vè trả về lúc complete thì scan trả về liên tục theo từng pipe mà ko cần complete
-totalCout$.pipe(scan((acc, cur) => acc + cur.postCount, 0)); //.subscribe(observer);
-
-//example scan for state managerment
-const initialState = {};
-const stateSubject = new BehaviorSubject(initialState);
-const state$ = stateSubject
-  .asObservable()
-  .pipe(scan((state, partialState) => ({ ...state, ...partialState }), {}));
-state$.subscribe(observer);
-stateSubject.next({ name: 'phuong' });
-stateSubject.next({ age: 19 });
+//debounceTime
+// cho phep chay emit sau khi ko co phan hoi deboundTime giay
+const queryInput = document.querySelector('#queryInput');
+fromEvent(queryInput, 'keydown')
+  .pipe(debounceTime(1500), pluck('target', 'value'))
+  .subscribe(observer);
