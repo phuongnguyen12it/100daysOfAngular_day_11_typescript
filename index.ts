@@ -1,90 +1,29 @@
-import { iif, of, throwError } from 'rxjs';
-import {
-  catchError,
-  map,
-  retry,
-  take,
-  delay,
-  defaultIfEmpty,
-  throwIfEmpty,
-  every,
-} from 'rxjs/operators';
+import { fromEvent, interval, of } from 'rxjs';
+import { map, mergeAll, take } from 'rxjs/operators';
 
-const observer = {
-  next: (value) => console.log(value),
-  error: (err) => console.error(err),
-  complete: () => console.log('complete'),
-};
+//Observable<number>
+//Observable<string>
+interval(1000) //Outer Observeble (parent Observable)
+  .pipe(map((val) => `I am at: ${val}`));
+//.subscribe(console.log);
 
-const handleError = () => {
-  console.log(`
-    --------------------------------------------
-    I am handling the error. Alerting the users
-    --------------------------------------------
-  `);
-};
+//map value to Observable
+const hoo = fromEvent(document, 'click') //Outer Observable (parent Observable)
+  .pipe(
+    map((val) => interval(1000).pipe(take(5))),
+    mergeAll(1)
+  ); //Inner Observerble (Child Observable)
 
-//catchError
-const obs = throwError('i am an error').pipe(
-  catchError((err, caught) => {
-    handleError();
-    return of('default value');
-  })
-); //.subscribe(observer);
+//mergeAll()
+//swithAll()
+//concatAll()
+// hoo.subscribe((obs) => {
+//   obs.subscribe(console.log); //bab subscribe in subscribe
+// });
 
-throwError('ugly error').pipe(
-  catchError((err) => {
-    handleError();
-    const beatyError = new Error('this is a freindlier error');
-    return throwError(beatyError);
-  })
-); //.subscribe(observer);
+// hoo.subscribe(console.log);
 
-const cached = [4, 5];
-of(1, 2, 3, 4, 5).pipe(
-  map((n) => {
-    if (cached.includes(n)) {
-      throw new Error('Duplicated: ' + n);
-    }
-    return n;
-  }),
-  catchError((err, caught) => caught),
-  take(5)
-); //.subscribe(observer);
-
-of(1, 2, 3, 4, 5).pipe(
-  map((n) => {
-    if (cached.includes(n)) {
-      throw new Error('Duplicated: ' + n);
-    }
-    return n;
-  }),
-  catchError((err, caught) => caught),
-  retry(2)
-); //.subscribe(observer);
-
-//conditional
-
-of().pipe(delay(3000), defaultIfEmpty('default value')); //.subscribe(observer);
-of().pipe(
-  delay(3000),
-  throwIfEmpty(() => 'error empty')
-); //.subscribe(observer);
-
-//every
-of(1, 2, 3, 4, 5, 6).pipe(every((x) => x > 0)); //.subscribe(observer);
-
-//iif => const obs = condition ? trueObs : falseObs;
-const userId = 123;
-
-function updateObservable() {
-  return of('update');
-}
-
-function createObservable() {
-  return of('create');
-}
-
-iif(() => userId != null, updateObservable(), createObservable()).subscribe(
-  observer
-);
+//mergeMap() = mergeAll() + map() //subscribe vao ca 3
+//swichMap() = switchAll() + map() // dg subscribe vao cai dau tien, ma co observebale thu 2 cancle cai dau tien subscribe vao cai thu 2, luon chi co 1 observable vao 1 thoi diem => thich họp cho cancel xhr request
+//concatMap() = concatAll() + map() subscribe theo thứ tự, complete cai 1 mới sang cái 2 và cứ thế tới cái cuối cùng
+//exhaustMap() //trong lúc dg subscrible mà có obsevebal thì đều bị cancle,
