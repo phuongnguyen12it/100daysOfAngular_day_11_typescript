@@ -1,43 +1,37 @@
-import { fromEvent, interval, merge, of, partition } from 'rxjs';
-import { map, mergeAll, take, tap } from 'rxjs/operators';
+import { BehaviorSubject, of, ReplaySubject, Subject, timer } from 'rxjs';
+import { finalize, switchMapTo } from 'rxjs/operators';
 
-//Observable<number>
-//Observable<string>
-interval(1000) //Outer Observeble (parent Observable)
-  .pipe(map((val) => `I am at: ${val}`));
-//.subscribe(console.log);
+//Subject
+const createObserver = (observer) => ({
+  next: (val) => console.log(observer, val),
+  error: (err) => console.error(observer, err),
+  complete: () => console.log(observer, 'complete'),
+});
 
-//map value to Observable
-const hoo = fromEvent(document, 'click') //Outer Observable (parent Observable)
-  .pipe(
-    map((val) => interval(1000).pipe(take(5))),
-    mergeAll(1)
-  ); //Inner Observerble (Child Observable)
+// const subject = new Subject();
 
-//mergeAll()
-//swithAll()
-//concatAll()
-// hoo.subscribe((obs) => {
-//   obs.subscribe(console.log); //bab subscribe in subscribe
-// });
+// subject.subscribe(createObserver('A'));
+// subject.next('hello');
+// subject.next('world');
 
-// hoo.subscribe(console.log);
+// subject.subscribe(createObserver('B'));
+// subject.next('this will be received by both A and B');
 
-//mergeMap() = mergeAll() + map() //subscribe vao ca 3
-//swichMap() = switchAll() + map() // dg subscribe vao cai dau tien, ma co observebale thu 2 cancle cai dau tien subscribe vao cai thu 2, luon chi co 1 observable vao 1 thoi diem => thich họp cho cancel xhr request
-//concatMap() = concatAll() + map() subscribe theo thứ tự, complete cai 1 mới sang cái 2 và cứ thế tới cái cuối cùng
-//exhaustMap() //trong lúc dg subscrible mà có obsevebal thì đều bị cancle,
+//behavorSubject
+// const loadingSubject = new Subject();
+// function getUsers() {
+//   loadingSubject.next(true);
+//   return timer(3000).pipe(
+//     switchMapTo(of('user')),
+//     finalize(() => {
+//       loadingSubject.next(false);
+//     })
+//   );
+// }
+// loadingSubject.subscribe(createObserver('Component'));
+// getUsers().subscribe();
+// const behaviorSubject = new BehaviorSubject('hello');
+// behaviorSubject.subscribe(createObserver('A'));
 
-const interval$ = interval(1000);
-const [even$, odd$] = partition(interval$, (val) => val % 2 === 0);
-
-// merge(even$.pipe(map((val) => `I am even: ${val}`))); //.subscribe(console.log);
-
-//tap
-even$
-  .pipe(
-    tap((val) => console.log('before map', val)),
-    map((val) => `I am even: ${val * 2}`),
-    tap((val) => console.log('after map', val)),
-    //take(5)
-  );//.subscribe(console.log);
+//replaySubject
+const replaySubject = new ReplaySubject(2, )
